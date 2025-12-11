@@ -1,5 +1,5 @@
-// משק קליין - אפליקציית ניהול משימות
-// ====================================
+// משק קליין - אפליקציית ניהול משימות עם Firebase
+// ================================================
 
 // אלמנטים מה-DOM
 const taskForm = document.getElementById('task-form');
@@ -28,24 +28,85 @@ const branchNames = {
 // פילטר נוכחי
 let currentFilter = 'all';
 
-// טעינת משימות מ-localStorage
-function loadTasks() {
-    const tasks = localStorage.getItem('meshek-klein-tasks');
-    return tasks ? JSON.parse(tasks) : [];
+// מערך משימות מקומי (cache)
+let tasksCache = [];
+
+// ===================
+// Firebase Functions
+// ===================
+
+// טעינת משימות מ-Firebase
+async function loadTasks() {
+    try {
+        const snapshot = await db.collection('tasks').orderBy('createdAt', 'desc').get();
+        tasksCache = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        return tasksCache;
+    } catch (error) {
+        console.error('Error loading tasks:', error);
+        return [];
+    }
 }
 
-// שמירת משימות ל-localStorage
-function saveTasks(tasks) {
-    localStorage.setItem('meshek-klein-tasks', JSON.stringify(tasks));
+// הוספת משימה ל-Firebase
+async function addTask(title, branch, dueDate, notes = '') {
+    try {
+        const newTask = {
+            title,
+            branch,
+            dueDate,
+            notes,
+            completed: false,
+            completedDate: null,
+            createdAt: new Date().toISOString()
+        };
+        
+        await db.collection('tasks').add(newTask);
+        await loadAndRender();
+    } catch (error) {
+        console.error('Error adding task:', error);
+        alert('שגיאה בהוספת משימה');
+    }
 }
 
-// יצירת ID ייחודי
-function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+// עדכון משימה ב-Firebase
+async function toggleTask(taskId) {
+    try {
+        const task = tasksCache.find(t => t.id === taskId);
+        if (task) {
+            const newCompleted = !task.completed;
+            await db.collection('tasks').doc(taskId).update({
+                completed: newCompleted,
+                completedDate: newCompleted ? new Date().toISOString() : null
+            });
+            await loadAndRender();
+        }
+    } catch (error) {
+        console.error('Error updating task:', error);
+    }
 }
+
+// מחיקת משימה מ-Firebase
+async function deleteTask(taskId) {
+    if (confirm('האם למחוק את המשימה?')) {
+        try {
+            await db.collection('tasks').doc(taskId).delete();
+            await loadAndRender();
+        } catch (error) {
+            console.error('Error deleting task:', error);
+        }
+    }
+}
+
+// ===================
+// UI Functions
+// ===================
 
 // פורמט תאריך לעברית
 function formatDate(dateString) {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('he-IL', {
         day: 'numeric',
@@ -58,51 +119,8 @@ function formatDate(dateString) {
 function isOverdue(dateString) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const taskDate = new Date(dateString);
-    return taskDate < today;
-}
-
-// הוספת משימה חדשה
-function addTask(title, branch, dueDate, notes = '') {
-    const tasks = loadTasks();
-    const newTask = {
-        id: generateId(),
-        title,
-        branch,
-        dueDate,
-        notes,
-        completed: false,
-        completedDate: null,
-        createdAt: new Date().toISOString()
-    };
-    tasks.unshift(newTask); // הוסף בהתחלה
-    saveTasks(tasks);
-    renderTasks();
-    updateStats();
-}
-
-// סימון משימה כהושלמה/לא הושלמה
-function toggleTask(taskId) {
-    const tasks = loadTasks();
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        task.completed = !task.completed;
-        task.completedDate = task.completed ? new Date().toISOString() : null;
-        saveTasks(tasks);
-        renderTasks();
-        updateStats();
-    }
-}
-
-// מחיקת משימה
-function deleteTask(taskId) {
-    if (confirm('האם למחוק את המשימה?')) {
-        let tasks = loadTasks();
-        tasks = tasks.filter(t => t.id !== taskId);
-        saveTasks(tasks);
-        renderTasks();
-        updateStats();
-    }
+    const taskDateObj = new Date(dateString);
+    return taskDateObj < today;
 }
 
 // יצירת HTML למשימה
@@ -128,21 +146,37 @@ function createTaskElement(task) {
             ${task.notes ? `<div class="task-notes">📝 ${task.notes}</div>` : ''}
             ${task.completedDate ? `<span class="task-completed-date">✓ הושלם ב-${formatDate(task.completedDate)}</span>` : ''}
         </div>
-        <button class="btn-delete" onclick="deleteTask('${task.id}')" title="מחק משימה">🗑️</button>
+        <div class="task-actions">
+            ${!task.completed ? `<button class="btn-calendar" onclick="addToGoogleCalendar('${task.id}')" title="הוסף ליומן Google">📅</button>` : ''}
+            <button class="btn-delete" onclick="deleteTask('${task.id}')" title="מחק משימה">🗑️</button>
+        </div>
     `;
     
     return taskCard;
 }
 
+// הוספה ליומן Google
+function addToGoogleCalendar(taskId) {
+    const task = tasksCache.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const title = encodeURIComponent(`משק קליין: ${task.title}`);
+    const details = encodeURIComponent(`ענף: ${branchNames[task.branch]}${task.notes ? '\n\nהערות: ' + task.notes : ''}`);
+    const date = task.dueDate.replace(/-/g, '');
+    
+    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${date}/${date}&reminder=1440`;
+    
+    window.open(calendarUrl, '_blank');
+}
+
 // רינדור כל המשימות
 function renderTasks() {
-    const tasks = loadTasks();
     tasksList.innerHTML = '';
     
     // פילטור לפי ענף
-    const filteredTasks = currentFilter === 'all' 
-        ? tasks 
-        : tasks.filter(t => t.branch === currentFilter);
+    let filteredTasks = currentFilter === 'all' 
+        ? [...tasksCache]
+        : tasksCache.filter(t => t.branch === currentFilter);
     
     // מיון: לא הושלמו קודם, ואז לפי תאריך
     filteredTasks.sort((a, b) => {
@@ -164,9 +198,8 @@ function renderTasks() {
 
 // עדכון סטטיסטיקות
 function updateStats() {
-    const tasks = loadTasks();
-    const total = tasks.length;
-    const completed = tasks.filter(t => t.completed).length;
+    const total = tasksCache.length;
+    const completed = tasksCache.filter(t => t.completed).length;
     const pending = total - completed;
     
     totalTasksEl.textContent = total;
@@ -174,11 +207,19 @@ function updateStats() {
     pendingTasksEl.textContent = pending;
 }
 
+// טעינה ורינדור
+async function loadAndRender() {
+    await loadTasks();
+    renderTasks();
+    updateStats();
+}
+
+// ===================
 // Event Listeners
-// ===============
+// ===================
 
 // טופס הוספת משימה
-taskForm.addEventListener('submit', (e) => {
+taskForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const title = taskTitle.value.trim();
@@ -187,9 +228,8 @@ taskForm.addEventListener('submit', (e) => {
     const notes = taskNotes.value.trim();
     
     if (title && branch && dueDate) {
-        addTask(title, branch, dueDate, notes);
+        await addTask(title, branch, dueDate, notes);
         taskForm.reset();
-        // קבע תאריך ברירת מחדל להיום
         taskDate.value = new Date().toISOString().split('T')[0];
     }
 });
@@ -233,8 +273,7 @@ logMonthFilter.addEventListener('change', renderLog);
 
 // רינדור הלוג
 function renderLog() {
-    const tasks = loadTasks();
-    let completedTasks = tasks.filter(t => t.completed);
+    let completedTasks = tasksCache.filter(t => t.completed);
     
     // סינון לפי ענף
     const branchFilter = logBranchFilter.value;
@@ -252,7 +291,7 @@ function renderLog() {
         });
     }
     
-    // מיון לפי תאריך השלמה (החדש ביותר קודם)
+    // מיון לפי תאריך השלמה
     completedTasks.sort((a, b) => new Date(b.completedDate) - new Date(a.completedDate));
     
     logList.innerHTML = '';
@@ -288,15 +327,13 @@ function renderLog() {
 
 // ייצוא לוג לקובץ טקסט
 exportLogBtn.addEventListener('click', () => {
-    const tasks = loadTasks();
-    const completedTasks = tasks.filter(t => t.completed);
+    const completedTasks = tasksCache.filter(t => t.completed);
     
     if (completedTasks.length === 0) {
         alert('אין משימות שהושלמו לייצוא');
         return;
     }
     
-    // מיון לפי תאריך
     completedTasks.sort((a, b) => new Date(b.completedDate) - new Date(a.completedDate));
     
     let content = '📋 לוג משימות שהושלמו - משק קליין\n';
@@ -316,7 +353,6 @@ exportLogBtn.addEventListener('click', () => {
         content += '\n';
     });
     
-    // יצירת קובץ להורדה
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -328,13 +364,15 @@ exportLogBtn.addEventListener('click', () => {
     URL.revokeObjectURL(url);
 });
 
+// ===================
 // אתחול
-// =====
+// ===================
 document.addEventListener('DOMContentLoaded', () => {
-    // קבע תאריך ברירת מחדל להיום
     taskDate.value = new Date().toISOString().split('T')[0];
-    
-    // טען ורנדר משימות
-    renderTasks();
-    updateStats();
+    loadAndRender();
+});
+
+// האזנה לשינויים בזמן אמת מ-Firebase
+db.collection('tasks').onSnapshot(() => {
+    loadAndRender();
 });
