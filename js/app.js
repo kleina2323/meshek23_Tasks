@@ -5,6 +5,7 @@
 const taskForm = document.getElementById('task-form');
 const taskTitle = document.getElementById('task-title');
 const taskBranch = document.getElementById('task-branch');
+const taskAssignee = document.getElementById('task-assignee');
 const taskDate = document.getElementById('task-date');
 const taskNotes = document.getElementById('task-notes');
 const tasksList = document.getElementById('tasks-list');
@@ -23,6 +24,13 @@ const branchNames = {
     lychee: '🍒 ליצ\'י',
     olives: '🫒 זיתים',
     avocado: '🥑 אבוקדו'
+};
+
+// מיפוי שמות אחראים
+const assigneeNames = {
+    adi: 'עדי',
+    omer: 'עומר',
+    ido: 'עידו'
 };
 
 // פילטר נוכחי
@@ -51,11 +59,12 @@ async function loadTasks() {
 }
 
 // הוספת משימה ל-Firebase
-async function addTask(title, branch, dueDate, notes = '') {
+async function addTask(title, branch, assignee, dueDate, notes = '') {
     try {
         const newTask = {
             title,
             branch,
+            assignee,
             dueDate,
             notes,
             completed: false,
@@ -135,16 +144,15 @@ function createTaskElement(task) {
         <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
                onchange="toggleTask('${task.id}')">
         <div class="task-content">
-            <span class="task-title">${task.title}</span>
+            <span class="task-title" title="${task.title}">${task.title}</span>
             <div class="task-meta">
                 <span class="task-branch">${branchNames[task.branch]}</span>
+                <span class="task-assignee">👤 ${assigneeNames[task.assignee] || task.assignee || '-'}</span>
                 <span class="task-date ${isTaskOverdue ? 'overdue' : ''}">
-                    📅 ${formatDate(task.dueDate)}
-                    ${isTaskOverdue ? '(באיחור!)' : ''}
+                    📅 ${formatDate(task.dueDate)}${isTaskOverdue ? ' (איחור!)' : ''}
                 </span>
+                ${task.notes ? `<span class="task-notes" title="${task.notes}">📝 ${task.notes}</span>` : ''}
             </div>
-            ${task.notes ? `<div class="task-notes">📝 ${task.notes}</div>` : ''}
-            ${task.completedDate ? `<span class="task-completed-date">✓ הושלם ב-${formatDate(task.completedDate)}</span>` : ''}
         </div>
         <div class="task-actions">
             ${!task.completed ? `<button class="btn-calendar" onclick="addToGoogleCalendar('${task.id}')" title="הוסף ליומן Google">📅</button>` : ''}
@@ -173,18 +181,15 @@ function addToGoogleCalendar(taskId) {
 function renderTasks() {
     tasksList.innerHTML = '';
     
-    // פילטור לפי ענף
-    let filteredTasks = currentFilter === 'all' 
-        ? [...tasksCache]
-        : tasksCache.filter(t => t.branch === currentFilter);
+    // פילטור לפי ענף - רק משימות שלא הושלמו
+    let filteredTasks = tasksCache.filter(t => !t.completed);
     
-    // מיון: לא הושלמו קודם, ואז לפי תאריך
-    filteredTasks.sort((a, b) => {
-        if (a.completed !== b.completed) {
-            return a.completed ? 1 : -1;
-        }
-        return new Date(a.dueDate) - new Date(b.dueDate);
-    });
+    if (currentFilter !== 'all') {
+        filteredTasks = filteredTasks.filter(t => t.branch === currentFilter);
+    }
+    
+    // מיון לפי תאריך
+    filteredTasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     
     if (filteredTasks.length === 0) {
         emptyState.classList.remove('hidden');
@@ -194,13 +199,18 @@ function renderTasks() {
             tasksList.appendChild(createTaskElement(task));
         });
     }
+    
+    // עדכון הלוג אם פתוח
+    if (!logContainer.classList.contains('hidden')) {
+        renderLog();
+    }
 }
 
 // עדכון סטטיסטיקות
 function updateStats() {
-    const total = tasksCache.length;
     const completed = tasksCache.filter(t => t.completed).length;
-    const pending = total - completed;
+    const pending = tasksCache.filter(t => !t.completed).length;
+    const total = pending; // רק משימות פעילות
     
     totalTasksEl.textContent = total;
     completedTasksEl.textContent = completed;
@@ -224,11 +234,12 @@ taskForm.addEventListener('submit', async (e) => {
     
     const title = taskTitle.value.trim();
     const branch = taskBranch.value;
+    const assignee = taskAssignee.value;
     const dueDate = taskDate.value;
     const notes = taskNotes.value.trim();
     
-    if (title && branch && dueDate) {
-        await addTask(title, branch, dueDate, notes);
+    if (title && branch && assignee && dueDate) {
+        await addTask(title, branch, assignee, dueDate, notes);
         taskForm.reset();
         taskDate.value = new Date().toISOString().split('T')[0];
     }
@@ -311,6 +322,7 @@ function renderLog() {
                     <span class="log-item-title">${task.title}</span>
                     <div class="log-item-meta">
                         <span>${branchNames[task.branch]}</span>
+                        <span>👤 ${assigneeNames[task.assignee] || task.assignee || '-'}</span>
                         <span>📅 יעד: ${formatDate(task.dueDate)}</span>
                     </div>
                     ${task.notes ? `<div class="log-item-notes">📝 ${task.notes}</div>` : ''}
@@ -365,9 +377,59 @@ exportLogBtn.addEventListener('click', () => {
 });
 
 // ===================
+// ברכה לפי שעה
+// ===================
+function setGreeting() {
+    const hour = new Date().getHours();
+    const greetingEl = document.getElementById('greeting');
+    let greeting = '';
+    
+    if (hour >= 5 && hour < 12) {
+        greeting = '☀️ בוקר טוב!';
+    } else if (hour >= 12 && hour < 14) {
+        greeting = '🌤️ צהריים טובים!';
+    } else if (hour >= 14 && hour < 17) {
+        greeting = '🌅 אחה"צ טובים!';
+    } else if (hour >= 17 && hour < 21) {
+        greeting = '🌆 ערב טוב!';
+    } else {
+        greeting = '🌙 לילה טוב!';
+    }
+    
+    greetingEl.textContent = greeting;
+}
+
+// עדכון תאריך ושעה
+function updateDateTime() {
+    const now = new Date();
+    
+    const dateEl = document.getElementById('current-date');
+    const timeEl = document.getElementById('current-time');
+    
+    if (dateEl) {
+        dateEl.textContent = now.toLocaleDateString('he-IL', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+    
+    if (timeEl) {
+        timeEl.textContent = now.toLocaleTimeString('he-IL', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+}
+
+// ===================
 // אתחול
 // ===================
 document.addEventListener('DOMContentLoaded', () => {
+    setGreeting();
+    updateDateTime();
+    setInterval(updateDateTime, 1000); // עדכון כל שנייה
     taskDate.value = new Date().toISOString().split('T')[0];
     loadAndRender();
 });

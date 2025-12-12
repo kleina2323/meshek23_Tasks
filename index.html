@@ -10,27 +10,55 @@
 <body>
     <header>
         <div class="header-content">
+            <div class="header-text">
+                <p id="greeting" class="greeting"></p>
+                <h1>🌿 משק קליין</h1>
+                <h2>ניהול משימות חקלאיות</h2>
+            </div>
             <img src="images/arbel.png" alt="משק קליין" class="header-logo">
-            <h1>🌿 משק קליין</h1>
-            <h2>ניהול משימות חקלאיות</h2>
         </div>
     </header>
 
     <main class="container">
+        <!-- סטטיסטיקות -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">סה"כ</span>
+                <span class="stat-number" id="total-tasks">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">ממתינות</span>
+                <span class="stat-number" id="pending-tasks">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">הושלמו</span>
+                <span class="stat-number" id="completed-tasks">0</span>
+            </div>
+        </div>
+
         <!-- טופס הוספת משימה -->
         <section class="add-task-section">
-            <h2>הוספת משימה חדשה</h2>
+            <h2>הוספת משימה חדשה 📝</h2>
+            
+            <!-- כפתורי ענפים לסינון -->
+            <div class="branch-filter-row">
+                <button class="filter-btn active" data-filter="all">📋 הכל</button>
+                <button class="filter-btn" data-filter="solar">☀️ סולארי</button>
+                <button class="filter-btn" data-filter="dir">🐑 דיר</button>
+                <button class="filter-btn" data-filter="lychee">🍒 ליצ'י</button>
+                <button class="filter-btn" data-filter="olives">🫒 זיתים</button>
+                <button class="filter-btn" data-filter="avocado">🥑 אבוקדו</button>
+            </div>
+            
             <form id="task-form">
-                <div class="form-row">
+                <div class="form-row-clean">
                     <div class="form-group">
-                        <label for="task-title">תיאור המשימה</label>
                         <input type="text" id="task-title" placeholder="מה צריך לעשות?" required>
                     </div>
                     <div class="form-group">
-                        <label for="task-branch">ענף</label>
                         <select id="task-branch" required>
                             <option value="">בחר ענף</option>
-                            <option value="solar">☀️ מערכות סולאריות</option>
+                            <option value="solar">☀️ סולארי</option>
                             <option value="dir">🐑 דיר</option>
                             <option value="lychee">🍒 ליצ'י</option>
                             <option value="olives">🫒 זיתים</option>
@@ -38,44 +66,22 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="task-date">תאריך יעד</label>
+                        <select id="task-assignee" required>
+                            <option value="">אחראי</option>
+                            <option value="adi">עדי</option>
+                            <option value="omer">עומר</option>
+                            <option value="ido">עידו</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <input type="date" id="task-date" required>
                     </div>
-                    <button type="submit" class="btn-add">הוסף משימה</button>
+                    <button type="submit" class="btn-add">+ הוסף</button>
                 </div>
                 <div class="form-row-notes">
-                    <div class="form-group full-width">
-                        <label for="task-notes">הערות (אופציונלי)</label>
-                        <textarea id="task-notes" placeholder="הוסף הערות או פרטים נוספים..." rows="2"></textarea>
-                    </div>
+                    <textarea id="task-notes" placeholder="הערות (אופציונלי)..." rows="1"></textarea>
                 </div>
             </form>
-        </section>
-
-        <!-- פילטר ענפים -->
-        <section class="filter-section">
-            <button class="filter-btn active" data-filter="all">הכל</button>
-            <button class="filter-btn" data-filter="solar">☀️ סולארי</button>
-            <button class="filter-btn" data-filter="dir">🐑 דיר</button>
-            <button class="filter-btn" data-filter="lychee">🍒 ליצ'י</button>
-            <button class="filter-btn" data-filter="olives">🫒 זיתים</button>
-            <button class="filter-btn" data-filter="avocado">🥑 אבוקדו</button>
-        </section>
-
-        <!-- סטטיסטיקות -->
-        <section class="stats-section">
-            <div class="stat-card">
-                <span class="stat-number" id="total-tasks">0</span>
-                <span class="stat-label">סה"כ משימות</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number" id="pending-tasks">0</span>
-                <span class="stat-label">ממתינות</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number" id="completed-tasks">0</span>
-                <span class="stat-label">הושלמו</span>
-            </div>
         </section>
 
         <!-- רשימת משימות -->
@@ -100,7 +106,7 @@
                     <label for="log-branch-filter">סנן לפי ענף:</label>
                     <select id="log-branch-filter">
                         <option value="all">הכל</option>
-                        <option value="solar">☀️ מערכות סולאריות</option>
+                        <option value="solar">☀️ סולארי</option>
                         <option value="dir">🐑 דיר</option>
                         <option value="lychee">🍒 ליצ'י</option>
                         <option value="olives">🫒 זיתים</option>
