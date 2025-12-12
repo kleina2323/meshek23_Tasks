@@ -81,8 +81,9 @@ header {
 .greeting {
     font-size: 1.8rem;
     font-weight: 500;
-    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
     opacity: 0.95;
+    text-align: center;
 }
 
 .header-content p {
