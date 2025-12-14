@@ -31,7 +31,9 @@ const branchNames = {
 const assigneeNames = {
     adi: 'עדי',
     omer: 'עומר',
-    ido: 'עידו'
+    ido: 'עידו',
+    dorit: 'דורית',
+    eli: 'אלי'
 };
 
 // פילטר נוכחי
