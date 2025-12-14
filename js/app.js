@@ -23,7 +23,8 @@ const branchNames = {
     dir: '🐑 דיר',
     lychee: '🍒 ליצ\'י',
     olives: '🫒 זיתים',
-    avocado: '🥑 אבוקדו'
+    avocado: '🥑 אבוקדו',
+    finance: '💰 פיננסי'
 };
 
 // מיפוי שמות אחראים
@@ -132,12 +133,23 @@ function isOverdue(dateString) {
     return taskDateObj < today;
 }
 
+// בדיקה אם משימה קרובה (יומיים לפני הסיום)
+function isDueSoon(dateString) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const taskDateObj = new Date(dateString);
+    const twoDaysFromNow = new Date(today);
+    twoDaysFromNow.setDate(today.getDate() + 2);
+    return taskDateObj >= today && taskDateObj <= twoDaysFromNow;
+}
+
 // יצירת HTML למשימה
 function createTaskElement(task) {
     const isTaskOverdue = !task.completed && isOverdue(task.dueDate);
+    const isTaskDueSoon = !task.completed && !isTaskOverdue && isDueSoon(task.dueDate);
     
     const taskCard = document.createElement('div');
-    taskCard.className = `task-card ${task.completed ? 'completed' : ''}`;
+    taskCard.className = `task-card ${task.completed ? 'completed' : ''} ${isTaskDueSoon ? 'due-soon' : ''}`;
     taskCard.dataset.branch = task.branch;
     
     taskCard.innerHTML = `
@@ -155,6 +167,7 @@ function createTaskElement(task) {
             </div>
         </div>
         <div class="task-actions">
+            ${!task.completed ? `<button class="btn-edit" onclick="openEditModal('${task.id}')" title="ערוך משימה">✏️</button>` : ''}
             ${!task.completed ? `<button class="btn-calendar" onclick="addToGoogleCalendar('${task.id}')" title="הוסף ליומן Google">📅</button>` : ''}
             <button class="btn-delete" onclick="deleteTask('${task.id}')" title="מחק משימה">🗑️</button>
         </div>
@@ -422,6 +435,60 @@ function updateDateTime() {
         });
     }
 }
+
+// ===================
+// עריכת משימה
+// ===================
+
+// פתיחת modal לעריכה
+function openEditModal(taskId) {
+    const task = tasksCache.find(t => t.id === taskId);
+    if (!task) return;
+    
+    document.getElementById('edit-task-id').value = taskId;
+    document.getElementById('edit-title').value = task.title;
+    document.getElementById('edit-branch').value = task.branch;
+    document.getElementById('edit-assignee').value = task.assignee;
+    document.getElementById('edit-date').value = task.dueDate;
+    document.getElementById('edit-notes').value = task.notes || '';
+    
+    document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+// סגירת modal
+function closeEditModal() {
+    document.getElementById('edit-modal').classList.add('hidden');
+}
+
+// שמירת עריכה
+document.getElementById('edit-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const taskId = document.getElementById('edit-task-id').value;
+    const updates = {
+        title: document.getElementById('edit-title').value.trim(),
+        branch: document.getElementById('edit-branch').value,
+        assignee: document.getElementById('edit-assignee').value,
+        dueDate: document.getElementById('edit-date').value,
+        notes: document.getElementById('edit-notes').value.trim()
+    };
+    
+    try {
+        await db.collection('tasks').doc(taskId).update(updates);
+        closeEditModal();
+        await loadAndRender();
+    } catch (error) {
+        console.error('Error updating task:', error);
+        alert('שגיאה בעדכון משימה');
+    }
+});
+
+// סגירה בלחיצה מחוץ ל-modal
+document.getElementById('edit-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'edit-modal') {
+        closeEditModal();
+    }
+});
 
 // ===================
 // אתחול

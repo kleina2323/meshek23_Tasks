@@ -48,6 +48,7 @@
                 <button class="filter-btn" data-filter="lychee">🍒 ליצ'י</button>
                 <button class="filter-btn" data-filter="olives">🫒 זיתים</button>
                 <button class="filter-btn" data-filter="avocado">🥑 אבוקדו</button>
+                <button class="filter-btn" data-filter="finance">💰 פיננסי</button>
             </div>
             
             <form id="task-form">
@@ -63,6 +64,7 @@
                             <option value="lychee">🍒 ליצ'י</option>
                             <option value="olives">🫒 זיתים</option>
                             <option value="avocado">🥑 אבוקדו</option>
+                            <option value="finance">💰 פיננסי</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -129,6 +131,51 @@
     <footer>
         <p>משק קליין © 2025</p>
     </footer>
+
+    <!-- Modal לעריכת משימה -->
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>✏️ עריכת משימה</h3>
+            <form id="edit-form">
+                <input type="hidden" id="edit-task-id">
+                <div class="form-group">
+                    <label>כותרת:</label>
+                    <input type="text" id="edit-title" required>
+                </div>
+                <div class="form-group">
+                    <label>ענף:</label>
+                    <select id="edit-branch" required>
+                        <option value="solar">☀️ סולארי</option>
+                        <option value="dir">🐑 דיר</option>
+                        <option value="lychee">🍒 ליצ'י</option>
+                        <option value="olives">🫒 זיתים</option>
+                        <option value="avocado">🥑 אבוקדו</option>
+                        <option value="finance">💰 פיננסי</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>אחראי:</label>
+                    <select id="edit-assignee" required>
+                        <option value="adi">עדי</option>
+                        <option value="omer">עומר</option>
+                        <option value="ido">עידו</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>תאריך יעד:</label>
+                    <input type="date" id="edit-date" required>
+                </div>
+                <div class="form-group">
+                    <label>הערות:</label>
+                    <textarea id="edit-notes" rows="2"></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-save">💾 שמור</button>
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()">❌ ביטול</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
