@@ -78,6 +78,14 @@
                     <div class="form-group">
                         <input type="date" id="task-date" required>
                     </div>
+                    <div class="form-group">
+                        <select id="task-recurring">
+                            <option value="">חד פעמי</option>
+                            <option value="daily">🔄 יומי</option>
+                            <option value="weekly">🔄 שבועי</option>
+                            <option value="monthly">🔄 חודשי</option>
+                        </select>
+                    </div>
                     <button type="submit" class="btn-add">+ הוסף</button>
                 </div>
                 <div class="form-row-notes">
@@ -164,6 +172,15 @@
                 <div class="form-group">
                     <label>תאריך יעד:</label>
                     <input type="date" id="edit-date" required>
+                </div>
+                <div class="form-group">
+                    <label>חזרה:</label>
+                    <select id="edit-recurring">
+                        <option value="">חד פעמי</option>
+                        <option value="daily">🔄 יומי</option>
+                        <option value="weekly">🔄 שבועי</option>
+                        <option value="monthly">🔄 חודשי</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>הערות:</label>

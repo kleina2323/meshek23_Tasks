@@ -60,7 +60,7 @@ async function loadTasks() {
 }
 
 // הוספת משימה ל-Firebase
-async function addTask(title, branch, assignee, dueDate, notes = '') {
+async function addTask(title, branch, assignee, dueDate, notes = '', recurring = '') {
     try {
         const newTask = {
             title,
@@ -68,6 +68,7 @@ async function addTask(title, branch, assignee, dueDate, notes = '') {
             assignee,
             dueDate,
             notes,
+            recurring,
             completed: false,
             completedDate: null,
             createdAt: new Date().toISOString()
@@ -91,11 +92,35 @@ async function toggleTask(taskId) {
                 completed: newCompleted,
                 completedDate: newCompleted ? new Date().toISOString() : null
             });
+            
+            // אם המשימה הושלמה והיא חוזרת - צור משימה חדשה
+            if (newCompleted && task.recurring) {
+                const nextDate = getNextRecurringDate(task.dueDate, task.recurring);
+                await addTask(task.title, task.branch, task.assignee, nextDate, task.notes, task.recurring);
+            }
+            
             await loadAndRender();
         }
     } catch (error) {
         console.error('Error updating task:', error);
     }
+}
+
+// חישוב תאריך הבא למשימה חוזרת
+function getNextRecurringDate(currentDate, recurringType) {
+    const date = new Date(currentDate);
+    switch (recurringType) {
+        case 'daily':
+            date.setDate(date.getDate() + 1);
+            break;
+        case 'weekly':
+            date.setDate(date.getDate() + 7);
+            break;
+        case 'monthly':
+            date.setMonth(date.getMonth() + 1);
+            break;
+    }
+    return date.toISOString().split('T')[0];
 }
 
 // מחיקת משימה מ-Firebase
@@ -107,6 +132,19 @@ async function deleteTask(taskId) {
         } catch (error) {
             console.error('Error deleting task:', error);
         }
+    }
+}
+
+// החזרת משימה מהלוג למשימות פעילות
+async function restoreTask(taskId) {
+    try {
+        await db.collection('tasks').doc(taskId).update({
+            completed: false,
+            completedDate: null
+        });
+        await loadAndRender();
+    } catch (error) {
+        console.error('Error restoring task:', error);
     }
 }
 
@@ -156,7 +194,7 @@ function createTaskElement(task) {
         <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
                onchange="toggleTask('${task.id}')">
         <div class="task-content">
-            <span class="task-title" title="${task.title}">${task.title}</span>
+            <span class="task-title" title="${task.title}">${task.title} ${task.recurring ? '<span class="recurring-badge" title="משימה חוזרת"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></span>' : ''}</span>
             <div class="task-meta">
                 <span class="task-branch">${branchNames[task.branch]}</span>
                 <span class="task-assignee">👤 ${assigneeNames[task.assignee] || task.assignee || '-'}</span>
@@ -250,9 +288,10 @@ taskForm.addEventListener('submit', async (e) => {
     const assignee = taskAssignee.value;
     const dueDate = taskDate.value;
     const notes = taskNotes.value.trim();
+    const recurring = document.getElementById('task-recurring').value;
     
     if (title && branch && assignee && dueDate) {
-        await addTask(title, branch, assignee, dueDate, notes);
+        await addTask(title, branch, assignee, dueDate, notes, recurring);
         taskForm.reset();
         taskDate.value = new Date().toISOString().split('T')[0];
     }
@@ -340,9 +379,12 @@ function renderLog() {
                     </div>
                     ${task.notes ? `<div class="log-item-notes">📝 ${task.notes}</div>` : ''}
                 </div>
-                <div class="log-item-dates">
-                    <div>✓ הושלם:</div>
-                    <div>${formatDate(task.completedDate)}</div>
+                <div class="log-item-actions">
+                    <div class="log-item-dates">
+                        <div>✓ הושלם:</div>
+                        <div>${formatDate(task.completedDate)}</div>
+                    </div>
+                    <button class="btn-restore" onclick="restoreTask('${task.id}')" title="החזר למשימות">↩️</button>
                 </div>
             `;
             logList.appendChild(logItem);
@@ -451,6 +493,7 @@ function openEditModal(taskId) {
     document.getElementById('edit-assignee').value = task.assignee;
     document.getElementById('edit-date').value = task.dueDate;
     document.getElementById('edit-notes').value = task.notes || '';
+    document.getElementById('edit-recurring').value = task.recurring || '';
     
     document.getElementById('edit-modal').classList.remove('hidden');
 }
@@ -470,7 +513,8 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
         branch: document.getElementById('edit-branch').value,
         assignee: document.getElementById('edit-assignee').value,
         dueDate: document.getElementById('edit-date').value,
-        notes: document.getElementById('edit-notes').value.trim()
+        notes: document.getElementById('edit-notes').value.trim(),
+        recurring: document.getElementById('edit-recurring').value
     };
     
     try {
