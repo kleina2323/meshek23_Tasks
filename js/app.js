@@ -1,4 +1,4 @@
-// משק קליין - אפליקציית ניהול משימות עם Firebase
+﻿// משק קליין - אפליקציית ניהול משימות עם Firebase
 // ================================================
 
 // אלמנטים מה-DOM
@@ -62,7 +62,7 @@ async function loadTasks() {
 }
 
 // הוספת משימה ל-Firebase
-async function addTask(title, branch, assignee, dueDate, notes = '', recurring = '') {
+async function addTask(title, branch, assignee, dueDate, notes = '') {
     try {
         const newTask = {
             title,
@@ -70,7 +70,6 @@ async function addTask(title, branch, assignee, dueDate, notes = '', recurring =
             assignee,
             dueDate,
             notes,
-            recurring,
             completed: false,
             completedDate: null,
             createdAt: new Date().toISOString()
@@ -95,12 +94,7 @@ async function toggleTask(taskId) {
                 completedDate: newCompleted ? new Date().toISOString() : null
             });
             
-            // אם המשימה הושלמה והיא חוזרת - צור משימה חדשה
-            if (newCompleted && task.recurring) {
-                const nextDate = getNextRecurringDate(task.dueDate, task.recurring);
-                await addTask(task.title, task.branch, task.assignee, nextDate, task.notes, task.recurring);
-            }
-            
+
             await loadAndRender();
         }
     } catch (error) {
@@ -108,22 +102,7 @@ async function toggleTask(taskId) {
     }
 }
 
-// חישוב תאריך הבא למשימה חוזרת
-function getNextRecurringDate(currentDate, recurringType) {
-    const date = new Date(currentDate);
-    switch (recurringType) {
-        case 'daily':
-            date.setDate(date.getDate() + 1);
-            break;
-        case 'weekly':
-            date.setDate(date.getDate() + 7);
-            break;
-        case 'monthly':
-            date.setMonth(date.getMonth() + 1);
-            break;
-    }
-    return date.toISOString().split('T')[0];
-}
+
 
 // מחיקת משימה מ-Firebase
 async function deleteTask(taskId) {
@@ -173,6 +152,16 @@ function isOverdue(dateString) {
     return taskDateObj < today;
 }
 
+// בדיקה אם משימה הושלמה לפני יותר מ-3 ימים
+function isCompletedMoreThan3DaysAgo(completedDate) {
+    if (!completedDate) return false;
+    const completed = new Date(completedDate);
+    const now = new Date();
+    const diffTime = now - completed;
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays >= 3;
+}
+
 // בדיקה אם משימה קרובה (יומיים לפני הסיום)
 function isDueSoon(dateString) {
     const today = new Date();
@@ -189,7 +178,7 @@ function createTaskElement(task) {
     const isTaskDueSoon = !task.completed && !isTaskOverdue && isDueSoon(task.dueDate);
     
     const taskCard = document.createElement('div');
-    taskCard.className = `task-card ${task.completed ? 'completed' : ''} ${isTaskDueSoon ? 'due-soon' : ''}`;
+    taskCard.className = `task-card ${task.completed ? 'completed' : ''} ${isTaskOverdue ? 'overdue' : ''} ${isTaskDueSoon ? 'due-soon' : ''}`;
     taskCard.dataset.branch = task.branch;
     
     taskCard.innerHTML = `
@@ -235,7 +224,11 @@ function renderTasks() {
     tasksList.innerHTML = '';
     
     // פילטור לפי ענף - רק משימות שלא הושלמו
-    let filteredTasks = tasksCache.filter(t => !t.completed);
+    let filteredTasks = tasksCache.filter(t => {
+        if (!t.completed) return true; // משימות פעילות
+        // משימות שהושלמו - הצג עם קו מחיקה אם פחות מ-3 ימים עברו
+        return !isCompletedMoreThan3DaysAgo(t.completedDate);
+    });
     
     if (currentFilter !== 'all') {
         filteredTasks = filteredTasks.filter(t => t.branch === currentFilter);
@@ -290,10 +283,10 @@ taskForm.addEventListener('submit', async (e) => {
     const assignee = taskAssignee.value;
     const dueDate = taskDate.value;
     const notes = taskNotes.value.trim();
-    const recurring = document.getElementById('task-recurring').value;
+    
     
     if (title && branch && assignee && dueDate) {
-        await addTask(title, branch, assignee, dueDate, notes, recurring);
+        await addTask(title, branch, assignee, dueDate, notes);
         taskForm.reset();
         taskDate.value = new Date().toISOString().split('T')[0];
     }
@@ -495,7 +488,7 @@ function openEditModal(taskId) {
     document.getElementById('edit-assignee').value = task.assignee;
     document.getElementById('edit-date').value = task.dueDate;
     document.getElementById('edit-notes').value = task.notes || '';
-    document.getElementById('edit-recurring').value = task.recurring || '';
+    // recurring removed
     
     document.getElementById('edit-modal').classList.remove('hidden');
 }
@@ -516,7 +509,7 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
         assignee: document.getElementById('edit-assignee').value,
         dueDate: document.getElementById('edit-date').value,
         notes: document.getElementById('edit-notes').value.trim(),
-        recurring: document.getElementById('edit-recurring').value
+        
     };
     
     try {
@@ -551,3 +544,17 @@ document.addEventListener('DOMContentLoaded', () => {
 db.collection('tasks').onSnapshot(() => {
     loadAndRender();
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+

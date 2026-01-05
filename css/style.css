@@ -1,4 +1,4 @@
-/* Reset and Base Styles */
+﻿/* Reset and Base Styles */
 * {
     margin: 0;
     padding: 0;
@@ -504,9 +504,9 @@ header {
 
 /* משימה קרובה - יומיים לפני הסיום */
 .task-card.due-soon {
-    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%);
-    border-right: 5px solid #dc3545;
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+    border-right: 5px solid #dc3545 !important;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
 }
 
 .task-card.due-soon::before {
@@ -1083,4 +1083,35 @@ footer {
     background: var(--primary-color);
     transform: scale(1.1);
 }
+
+
+/* משימה באיחור - עברה את תאריך הביצוע */
+.task-card.overdue {
+    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+    border-right: 5px solid #dc3545 !important;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
+}
+
+
+/* משימה באיחור - עברה את תאריך הביצוע */
+.task-card.overdue {
+    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+    border-right: 5px solid #dc3545 !important;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
+}
+
+/* משימה באיחור */
+.task-card.overdue {
+    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+    border-right: 5px solid #dc3545 !important;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
+}
+
+/* משימה באיחור */
+.task-card.overdue {
+    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+    border-right: 5px solid #dc3545 !important;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
+}
+
 
