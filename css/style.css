@@ -885,6 +885,20 @@ footer {
         grid-template-columns: auto 1fr auto;
         gap: 0.5rem;
     }
+
+    .task-card.overdue,
+    .task-card.due-soon {
+        background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+        border-right: 5px solid #dc3545 !important;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
+    }
+
+    .task-card.overdue,
+    .task-card.due-soon {
+        background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+        border-right: 5px solid #dc3545 !important;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
+    }
     
     .task-content {
         flex-direction: column;
@@ -1113,5 +1127,6 @@ footer {
     border-right: 5px solid #dc3545 !important;
     box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
 }
+
 
 
