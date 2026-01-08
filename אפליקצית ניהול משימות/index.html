@@ -54,7 +54,7 @@
             <form id="task-form">
                 <div class="form-row-clean">
                     <div class="form-group">
-                        <input type="text" id="task-title" placeholder="מה צריך לעשות?" required>
+                        <textarea id="task-title" placeholder="מה צריך לעשות?" required rows="1"></textarea>
                     </div>
                     <div class="form-group">
                         <select id="task-branch" required>
@@ -178,6 +178,32 @@
                 <div class="modal-buttons">
                     <button type="submit" class="btn-save">💾 שמור</button>
                     <button type="button" class="btn-cancel" onclick="closeEditModal()">❌ ביטול</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal לסגירת משימה -->
+    <div id="complete-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>✅ סגירת משימה</h3>
+            <p id="complete-task-title" style="font-weight: 600; margin-bottom: 1rem;"></p>
+            <form id="complete-form">
+                <input type="hidden" id="complete-task-id">
+                <div class="form-group">
+                    <label>מי סגר את המשימה?</label>
+                    <select id="complete-by" required>
+                        <option value="">בחר...</option>
+                        <option value="adi">עדי</option>
+                        <option value="omer">עומר</option>
+                        <option value="ido">עידו</option>
+                        <option value="dorit">דורית</option>
+                        <option value="eli">אלי</option>
+                    </select>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-save">✅ סגור משימה</button>
+                    <button type="button" class="btn-cancel" onclick="closeCompleteModal()">❌ ביטול</button>
                 </div>
             </form>
         </div>

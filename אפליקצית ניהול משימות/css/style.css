@@ -218,13 +218,23 @@ header {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
     padding: 0.8rem 1rem;
     border: 2px solid #ddd;
     border-radius: 8px;
     font-size: 1rem;
     font-family: 'Heebo', sans-serif;
     transition: border-color 0.3s ease;
+}
+
+/* Auto-grow textarea */
+#task-title {
+    resize: none;
+    overflow: hidden;
+    min-height: 48px;
+    max-height: 200px;
+    line-height: 1.5;
 }
 
 .form-group input:focus,
@@ -384,7 +394,8 @@ header {
     align-items: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     border-right: 4px solid var(--primary-color);
-    height: 65px;
+    min-height: 65px;
+    height: auto;
 }
 
 .task-card:hover {
@@ -441,13 +452,15 @@ header {
 .task-title {
     font-weight: 600;
     font-size: 1rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow: visible;
+    text-overflow: unset;
+    max-width: none;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    line-height: 1.4;
 }
 
 .recurring-badge {
@@ -502,11 +515,23 @@ header {
     font-weight: 600;
 }
 
+/* מידע על סגירת משימה */
+.task-completed-info {
+    font-size: 0.8rem;
+    color: var(--success-color);
+    font-weight: 500;
+    margin-top: 0.3rem;
+    padding: 0.3rem 0.6rem;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 8px;
+    display: inline-block;
+}
+
 /* משימה קרובה - יומיים לפני הסיום */
 .task-card.due-soon {
-    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%);
-    border-right: 5px solid #dc3545;
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+    border-right: 5px solid #dc3545 !important;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
 }
 
 .task-card.due-soon::before {
@@ -880,49 +905,78 @@ footer {
     
     .task-card {
         height: auto;
-        min-height: 60px;
+        min-height: auto;
         padding: 0.8rem;
-        grid-template-columns: auto 1fr auto;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 0.5rem;
+        align-items: center;
+    }
+
+    .task-card.overdue,
+    .task-card.due-soon {
+        background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+        border-right: 5px solid #dc3545 !important;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
+    }
+    
+    .task-checkbox {
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
     }
     
     .task-content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.3rem;
+        gap: 0.4rem;
     }
     
     .task-title {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         max-width: 100%;
+        white-space: normal;
+        word-wrap: break-word;
+        line-height: 1.3;
     }
     
     .task-meta {
+        display: flex;
         flex-wrap: wrap;
         gap: 0.4rem;
+        width: 100%;
     }
     
     .task-branch, .task-assignee {
         font-size: 0.7rem;
-        padding: 0.15rem 0.4rem;
+        padding: 0.2rem 0.5rem;
     }
     
     .task-date {
         font-size: 0.75rem;
     }
     
-    .task-notes {
-        display: none;
+    .task-notes-preview {
+        font-size: 0.75rem;
+        color: var(--text-light);
+        width: 100%;
+        white-space: normal;
+        word-wrap: break-word;
     }
     
-    .task-checkbox {
-        width: 20px;
-        height: 20px;
+    .task-actions {
+        display: flex;
+        gap: 0.3rem;
+        flex-shrink: 0;
     }
     
-    .btn-delete, .btn-calendar {
+    .btn-delete, .btn-calendar, .btn-edit {
         font-size: 1rem;
-        padding: 0.3rem;
+        padding: 0.4rem;
     }
     
     /* Log */
@@ -1087,29 +1141,32 @@ footer {
 
 /* משימה באיחור - עברה את תאריך הביצוע */
 .task-card.overdue {
-    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%);
-    border-right: 5px solid #dc3545;
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+    border-right: 5px solid #dc3545 !important;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
 }
 
 
 /* משימה באיחור - עברה את תאריך הביצוע */
 .task-card.overdue {
-    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%);
-    border-right: 5px solid #dc3545;
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+    border-right: 5px solid #dc3545 !important;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
 }
 
 /* משימה באיחור */
 .task-card.overdue {
-    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%);
-    border-right: 5px solid #dc3545;
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+    border-right: 5px solid #dc3545 !important;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
 }
 
 /* משימה באיחור */
 .task-card.overdue {
-    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%);
-    border-right: 5px solid #dc3545;
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    background: linear-gradient(135deg, #ffe5e5 0%, #ffcccc 100%) !important;
+    border-right: 5px solid #dc3545 !important;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
 }
+
+
+
