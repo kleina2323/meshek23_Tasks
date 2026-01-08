@@ -444,9 +444,11 @@ header {
 .task-content {
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     gap: 1rem;
-    overflow: hidden;
+    overflow: visible;
+    flex: 1;
+    min-width: 0;
 }
 
 .task-title {
@@ -454,12 +456,12 @@ header {
     font-size: 1rem;
     white-space: normal;
     word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
     overflow: visible;
     text-overflow: unset;
-    max-width: none;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    max-width: 100%;
+    display: block;
     line-height: 1.4;
 }
 
@@ -934,6 +936,7 @@ footer {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.4rem;
+        overflow: visible;
     }
     
     .task-title {
@@ -941,7 +944,10 @@ footer {
         max-width: 100%;
         white-space: normal;
         word-wrap: break-word;
-        line-height: 1.3;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.4;
+        display: block;
     }
     
     .task-meta {
