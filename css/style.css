@@ -489,18 +489,18 @@ header {
 .task-branch {
     background: var(--primary-light);
     color: var(--white);
-    padding: 0.2rem 0.6rem;
+    padding: 0.25rem 0.7rem;
     border-radius: 15px;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     white-space: nowrap;
 }
 
 .task-assignee {
     background: #ffffff;
     color: #000000;
-    padding: 0.2rem 0.6rem;
+    padding: 0.25rem 0.7rem;
     border-radius: 15px;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     white-space: nowrap;
     font-weight: 500;
     border: 1.5px solid #000000;
