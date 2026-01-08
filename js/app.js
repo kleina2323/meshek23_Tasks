@@ -19,6 +19,7 @@ const completedTasksEl = document.getElementById('completed-tasks');
 
 // מיפוי ענפים
 const branchNames = {
+    general: '📌 כללי',
     solar: '☀️ מערכות סולאריות',
     dir: '🐑 דיר',
     lychee: '🍒 ליצ\'י',
