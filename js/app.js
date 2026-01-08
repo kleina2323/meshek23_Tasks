@@ -88,19 +88,62 @@ async function toggleTask(taskId) {
     try {
         const task = tasksCache.find(t => t.id === taskId);
         if (task) {
-            const newCompleted = !task.completed;
-            await db.collection('tasks').doc(taskId).update({
-                completed: newCompleted,
-                completedDate: newCompleted ? new Date().toISOString() : null
-            });
-            
-
-            await loadAndRender();
+            if (!task.completed) {
+                // פתיחת Modal לבחירת מי סגר
+                openCompleteModal(taskId, task.title);
+            } else {
+                // ביטול סגירה - החזרה למשימות פעילות
+                await db.collection('tasks').doc(taskId).update({
+                    completed: false,
+                    completedDate: null,
+                    completedBy: null
+                });
+                await loadAndRender();
+            }
         }
     } catch (error) {
         console.error('Error updating task:', error);
     }
 }
+
+// פתיחת Modal לסגירת משימה
+function openCompleteModal(taskId, taskTitle) {
+    document.getElementById('complete-task-id').value = taskId;
+    document.getElementById('complete-task-title').textContent = taskTitle;
+    document.getElementById('complete-by').value = '';
+    document.getElementById('complete-modal').classList.remove('hidden');
+}
+
+// סגירת Modal סגירת משימה
+function closeCompleteModal() {
+    document.getElementById('complete-modal').classList.add('hidden');
+}
+
+// טיפול בשליחת טופס סגירת משימה
+document.getElementById('complete-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const taskId = document.getElementById('complete-task-id').value;
+    const completedBy = document.getElementById('complete-by').value;
+    
+    if (!completedBy) {
+        alert('יש לבחור מי סגר את המשימה');
+        return;
+    }
+    
+    try {
+        await db.collection('tasks').doc(taskId).update({
+            completed: true,
+            completedDate: new Date().toISOString(),
+            completedBy: completedBy
+        });
+        closeCompleteModal();
+        await loadAndRender();
+    } catch (error) {
+        console.error('Error completing task:', error);
+        alert('שגיאה בסגירת המשימה');
+    }
+});
 
 
 
@@ -121,7 +164,8 @@ async function restoreTask(taskId) {
     try {
         await db.collection('tasks').doc(taskId).update({
             completed: false,
-            completedDate: null
+            completedDate: null,
+            completedBy: null
         });
         await loadAndRender();
     } catch (error) {
@@ -181,6 +225,12 @@ function createTaskElement(task) {
     taskCard.className = `task-card ${task.completed ? 'completed' : ''} ${isTaskOverdue ? 'overdue' : ''} ${isTaskDueSoon ? 'due-soon' : ''}`;
     taskCard.dataset.branch = task.branch;
     
+    // מידע על סגירת המשימה
+    const completedInfo = task.completed ? 
+        `<div class="task-completed-info">
+            ✓ נסגר ע"י ${assigneeNames[task.completedBy] || task.completedBy || '-'} | ${formatDate(task.completedDate)}
+        </div>` : '';
+    
     taskCard.innerHTML = `
         <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
                onchange="toggleTask('${task.id}')">
@@ -194,6 +244,7 @@ function createTaskElement(task) {
                 </span>
                 ${task.notes ? `<span class="task-notes" title="${task.notes}">📝 ${task.notes}</span>` : ''}
             </div>
+            ${completedInfo}
         </div>
         <div class="task-actions">
             ${!task.completed ? `<button class="btn-edit" onclick="openEditModal('${task.id}')" title="ערוך משימה">✏️</button>` : ''}
@@ -369,15 +420,15 @@ function renderLog() {
                     <span class="log-item-title">${task.title}</span>
                     <div class="log-item-meta">
                         <span>${branchNames[task.branch]}</span>
-                        <span>👤 ${assigneeNames[task.assignee] || task.assignee || '-'}</span>
+                        <span>👤 אחראי: ${assigneeNames[task.assignee] || task.assignee || '-'}</span>
                         <span>📅 יעד: ${formatDate(task.dueDate)}</span>
                     </div>
                     ${task.notes ? `<div class="log-item-notes">📝 ${task.notes}</div>` : ''}
                 </div>
                 <div class="log-item-actions">
                     <div class="log-item-dates">
-                        <div>✓ הושלם:</div>
-                        <div>${formatDate(task.completedDate)}</div>
+                        <div>✓ הושלם: ${formatDate(task.completedDate)}</div>
+                        <div>👤 סגר: ${assigneeNames[task.completedBy] || task.completedBy || '-'}</div>
                     </div>
                     <button class="btn-restore" onclick="restoreTask('${task.id}')" title="החזר למשימות">↩️</button>
                 </div>
@@ -407,8 +458,10 @@ exportLogBtn.addEventListener('click', () => {
     completedTasks.forEach((task, index) => {
         content += `${index + 1}. ${task.title}\n`;
         content += `   ענף: ${branchNames[task.branch]}\n`;
+        content += `   אחראי: ${assigneeNames[task.assignee] || task.assignee || '-'}\n`;
         content += `   תאריך יעד: ${formatDate(task.dueDate)}\n`;
         content += `   הושלם בתאריך: ${formatDate(task.completedDate)}\n`;
+        content += `   סגר: ${assigneeNames[task.completedBy] || task.completedBy || '-'}\n`;
         if (task.notes) {
             content += `   הערות: ${task.notes}\n`;
         }
@@ -530,6 +583,14 @@ document.getElementById('edit-modal').addEventListener('click', (e) => {
 });
 
 // ===================
+// Auto-grow textarea
+// ===================
+function autoGrowTextarea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+}
+
+// ===================
 // אתחול
 // ===================
 document.addEventListener('DOMContentLoaded', () => {
@@ -538,6 +599,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateDateTime, 1000); // עדכון כל שנייה
     taskDate.value = new Date().toISOString().split('T')[0];
     loadAndRender();
+    
+    // הוספת auto-grow לשדה כותרת המשימה
+    taskTitle.addEventListener('input', function() {
+        autoGrowTextarea(this);
+    });
 });
 
 // האזנה לשינויים בזמן אמת מ-Firebase
