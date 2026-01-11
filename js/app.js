@@ -197,14 +197,14 @@ function isOverdue(dateString) {
     return taskDateObj < today;
 }
 
-// בדיקה אם משימה הושלמה לפני יותר מ-3 ימים
+// בדיקה אם משימה הושלמה לפני יותר מיום וחצי
 function isCompletedMoreThan3DaysAgo(completedDate) {
     if (!completedDate) return false;
     const completed = new Date(completedDate);
     const now = new Date();
     const diffTime = now - completed;
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    return diffDays >= 3;
+    return diffDays >= 1.5;
 }
 
 // בדיקה אם משימה קרובה (יומיים לפני הסיום)
